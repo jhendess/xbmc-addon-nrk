@@ -54,13 +54,13 @@ def live():
         li.setInfo('video', {'title': ch.title})
         li.addStreamInfo('video', {'codec': 'h264', 'width': 1280, 'height': 720})
         li.addStreamInfo('audio', {'codec': 'aac', 'channels': 2})
-        addDirectoryItem(plugin.handle, ch.media_url, li, False)
+        addDirectoryItem(plugin.handle, enrichForForeignViewers(ch.media_url), li, False)
 
     url = "https://nrktegnsprak-lh.akamaihd.net/i/nrktegnsprak_0@111177/master.m3u8"
     li = ListItem("Tegnspråk")
     li.setArt({'thumb': "http://gfx.nrk.no/R4LFuTHBHWPMmv1dkqvPGQY4-ZZTKdNKAFPg_LHhoEFA"})
     li.setProperty('isplayable', 'true')
-    addDirectoryItem(plugin.handle, url, li, False)
+    addDirectoryItem(plugin.handle, enrichForForeignViewers(url), li, False)
 
     add_radio_channels()
     endOfDirectory(plugin.handle)
@@ -103,7 +103,7 @@ def add_radio_channels():
         li = ListItem(title,)
         li.setProperty('mimetype', "audio/mpeg")
         li.setProperty('isplayable', 'true')
-        addDirectoryItem(plugin.handle, url, li, False)
+        addDirectoryItem(plugin.handle, enrichForForeignViewers(url), li, False)
 
 
 def view(items, update_listing=False, urls=None):
@@ -210,6 +210,11 @@ def play(video_id):
     urls = nrktv.program(video_id).media_urls
     if not urls:
         return
+
+    # Enrich HTTP headers for foreign viewers
+    for index, url in enumerate(urls):
+        urls[index] = enrichForForeignViewers(url)
+
     url = urls[0] if len(urls) == 1 else "stack://" + ' , '.join(urls)
 
     xbmcplugin.setResolvedUrl(plugin.handle, True, ListItem(path=url))
@@ -229,6 +234,10 @@ def play(video_id):
 def play_url():
     url = plugin.args['url'][0]
     xbmcplugin.setResolvedUrl(plugin.handle, True, ListItem(path=url))
+
+
+def enrichForForeignViewers(url):
+    return url + "|" +  "X-Forwarded-For=160.68.205.231"
 
 
 if __name__ == '__main__':
